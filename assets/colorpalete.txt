@@ -1,0 +1,7 @@
+Color Palette: * Background: Pure Pitch Black (#0A0A0A) and
+ Slate Deep Gray (#121214) for container cards. 
+ * Primary Accent / Safe State: Vibrant GitHub Matrix Green (#00E676) 
+ * Alert / Danger State: Electric Neon Coral (#FF3D00)
+  * Warning State: Cyber Amber (#FFC107) 
+  * Neutral Typography: Crisp White (#FFFFFF)
+   and Subdued Muted Gray (#8B8D99)
