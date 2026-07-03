@@ -59,6 +59,13 @@ async function getGithubStreak(req, res, next) {
       return res.status(400).json({ message: "GitHub username is required" });
     }
 
+    console.log(`Fetching streak for user: ${username}`);
+
+    if (!process.env.GITHUB_TOKEN) {
+      console.error("ERROR: GITHUB_TOKEN is not set in Backend/.env");
+      return res.status(500).json({ message: "Server configuration error: Missing GITHUB_TOKEN" });
+    }
+
     // Using GitHub GraphQL API v4
     const query = `
       query($username: String!) {
@@ -78,32 +85,41 @@ async function getGithubStreak(req, res, next) {
       }
     `;
 
-    const response = await axios.post(
-      "https://api.github.com/graphql",
-      {
-        query,
-        variables: { username },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await axios.post(
+        "https://api.github.com/graphql",
+        {
+          query,
+          variables: { username },
         },
-      },
-    );
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
 
-    if (response.data.errors) {
-      return res.status(400).json({
-        message: "GitHub GraphQL error",
-        errors: response.data.errors,
-      });
-    }
+      if (response.data.errors) {
+        console.error("GitHub GraphQL Errors:", JSON.stringify(response.data.errors));
+        return res.status(400).json({
+          message: "GitHub GraphQL error",
+          errors: response.data.errors,
+        });
+      }
 
-    const calendar =
-      response.data.data.user.contributionsCollection.contributionCalendar;
-    const days = calendar.weeks
-      .flatMap((week) => week.contributionDays)
-      .reverse();
+      if (!response.data.data?.user) {
+         console.error(`User not found in GitHub GraphQL: ${username}`);
+         return res.status(404).json({ message: "GitHub user not found" });
+      }
+
+      const calendar =
+        response.data.data.user.contributionsCollection.contributionCalendar;
+      const days = calendar.weeks
+        .flatMap((week) => week.contributionDays)
+        .reverse();
+
+      console.log(`Successfully fetched ${days.length} days of activity`);
 
     let currentStreak = 0;
     let longestStreak = 0;

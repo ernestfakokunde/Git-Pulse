@@ -55,7 +55,8 @@ export default function DashboardPage() {
         setError(data.message || "Failed to load streak data");
       }
     } catch (err) {
-      setError("Unable to connect to the server");
+      console.error("Fetch Error Details:", err);
+      setError("Unable to connect to the server at " + apiUrl);
     } finally {
       setLoading(false);
       setRefreshing(false);
