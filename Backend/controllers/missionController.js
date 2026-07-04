@@ -3,14 +3,15 @@ const axios = require("axios");
 
 async function claimDailyCheckIn(req, res, next) {
   try {
-    const userId = req.user.id; // From auth middleware
+    const { clientDate } = req.body;
+    const userId = req.user.id;
     const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = clientDate || new Date().toISOString().split("T")[0];
     const lastCheckIn = user.lastCheckIn ? user.lastCheckIn.toISOString().split("T")[0] : null;
 
     if (lastCheckIn === today) {
@@ -53,10 +54,11 @@ async function claimDailyCheckIn(req, res, next) {
 
 async function getMissions(req, res, next) {
     try {
+        const { clientDate } = req.query;
         const userId = req.user.id;
         const user = await User.findById(userId);
 
-        const today = new Date().toISOString().split("T")[0];
+        const today = clientDate || new Date().toISOString().split("T")[0];
         const lastCheckIn = user.lastCheckIn ? user.lastCheckIn.toISOString().split("T")[0] : null;
 
         const missions = [

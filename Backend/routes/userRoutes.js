@@ -1,10 +1,10 @@
 const express = require("express");
-
-const { getUserById, getUsers } = require("../controllers/userController");
+const { getLeaderboard, getProfile } = require("../controllers/userController");
+const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-router.get("/", getUsers);
-router.get("/:id", getUserById);
+router.get("/leaderboard", getLeaderboard);
+router.get("/me", auth, getProfile);
 
 module.exports = router;

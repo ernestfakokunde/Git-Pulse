@@ -173,6 +173,14 @@ async function loginWithGithub(req, res, next) {
     let user;
 
     if (mongoose.connection.readyState === 1) {
+      const existingUser = await User.findOne({ githubId: githubUser.githubId });
+
+      if (!existingUser) {
+        // Initialize XP for new users based on public repos or just start at 0
+        githubUser.xp = 0;
+        githubUser.level = 1;
+      }
+
       user = await User.findOneAndUpdate(
         { githubId: githubUser.githubId },
         githubUser,
