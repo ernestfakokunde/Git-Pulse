@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 
 const connectDB = require("./config/db");
+const { connectRedis } = require("./config/redis");
 const apiRoutes = require("./routes");
 const notFound = require("./middleware/notFound");
 const errorHandler = require("./middleware/errorHandler");
@@ -37,6 +38,7 @@ app.use(errorHandler);
 
 async function startServer() {
   await connectDB();
+  await connectRedis();
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`GitPulse API listening on http://0.0.0.0:${PORT}`);

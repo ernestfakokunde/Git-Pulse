@@ -60,6 +60,7 @@ export default function DashboardPage() {
 
       const parsedGithub = JSON.parse(storedGithub);
       const parsedUser = JSON.parse(storedUserData || "{}");
+      const clientDate = new Date().toISOString().split("T")[0];
 
       setGithubUser(parsedGithub);
       setUserStats({ xp: parsedUser.xp || 0, level: parsedUser.level || 1 });
@@ -67,7 +68,7 @@ export default function DashboardPage() {
       // Parallel fetch
       const [streakRes, missionsRes] = await Promise.all([
         fetch(`${apiUrl}/api/github/streak/${parsedGithub.username}`),
-        fetch(`${apiUrl}/api/missions`, {
+        fetch(`${apiUrl}/api/missions?clientDate=${clientDate}`, {
             headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -99,13 +100,15 @@ export default function DashboardPage() {
   const handleClaim = async (missionId: string) => {
     try {
         const token = await AsyncStorage.getItem("userToken");
+        const clientDate = new Date().toISOString().split("T")[0];
+
         const response = await fetch(`${apiUrl}/api/missions/claim`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`
             },
-            body: JSON.stringify({ missionId })
+            body: JSON.stringify({ missionId, clientDate })
         });
 
         const data = await response.json();
