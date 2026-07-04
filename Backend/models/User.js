@@ -40,6 +40,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    xp: {
+      type: Number,
+      default: 0,
+    },
+    level: {
+      type: Number,
+      default: 1,
+    },
+    lastCheckIn: {
+      type: Date,
+    },
+    checkInStreak: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

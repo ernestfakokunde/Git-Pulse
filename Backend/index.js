@@ -38,8 +38,9 @@ app.use(errorHandler);
 async function startServer() {
   await connectDB();
 
-  app.listen(PORT, () => {
-    console.log(`GitPulse API listening on port ${PORT}`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`GitPulse API listening on http://0.0.0.0:${PORT}`);
+    console.log(`Local network access: http://10.180.4.249:${PORT}`);
   });
 }
 

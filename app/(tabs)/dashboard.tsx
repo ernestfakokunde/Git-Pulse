@@ -10,6 +10,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000";
@@ -28,32 +29,55 @@ interface StreakData {
   days: { date: string; contributionCount: number }[];
 }
 
+interface Mission {
+  id: string;
+  title: string;
+  description: string;
+  xpReward: number;
+  completed: boolean;
+  type: string;
+}
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [githubUser, setGithubUser] = useState<GithubData | null>(null);
   const [streak, setStreak] = useState<StreakData | null>(null);
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [userStats, setUserStats] = useState({ xp: 0, level: 1 });
   const [error, setError] = useState("");
 
   const fetchData = async () => {
     try {
+      const token = await AsyncStorage.getItem("userToken");
       const storedGithub = await AsyncStorage.getItem("githubData");
-      if (!storedGithub) {
+      const storedUserData = await AsyncStorage.getItem("userData");
+
+      if (!storedGithub || !token) {
         router.replace("/");
         return;
       }
 
       const parsedGithub = JSON.parse(storedGithub);
+      const parsedUser = JSON.parse(storedUserData || "{}");
+
       setGithubUser(parsedGithub);
+      setUserStats({ xp: parsedUser.xp || 0, level: parsedUser.level || 1 });
 
-      const response = await fetch(`${apiUrl}/api/github/streak/${parsedGithub.username}`);
-      const data = await response.json();
+      // Parallel fetch
+      const [streakRes, missionsRes] = await Promise.all([
+        fetch(`${apiUrl}/api/github/streak/${parsedGithub.username}`),
+        fetch(`${apiUrl}/api/missions`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
 
-      if (response.ok) {
-        setStreak(data);
-      } else {
-        setError(data.message || "Failed to load streak data");
-      }
+      const streakData = await streakRes.json();
+      const missionsData = await missionsRes.json();
+
+      if (streakRes.ok) setStreak(streakData);
+      if (missionsRes.ok) setMissions(missionsData);
+
     } catch (err) {
       console.error("Fetch Error Details:", err);
       setError("Unable to connect to the server at " + apiUrl);
@@ -72,17 +96,53 @@ export default function DashboardPage() {
     fetchData();
   };
 
-  const currentXP = streak?.totalContributions || 0;
-  const level = Math.floor(currentXP / 100) + 1;
+  const handleClaim = async (missionId: string) => {
+    try {
+        const token = await AsyncStorage.getItem("userToken");
+        const response = await fetch(`${apiUrl}/api/missions/claim`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ missionId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            Alert.alert("Success!", `You gained ${data.xpGained} XP!`);
+            // Update local state
+            setUserStats({ xp: data.newTotalXp, level: data.level });
+            setMissions(prev => prev.map(m => m.id === "daily_checkin" ? { ...m, completed: true } : m));
+
+            // Update stored userData
+            const storedUserData = await AsyncStorage.getItem("userData");
+            if (storedUserData) {
+                const parsed = JSON.parse(storedUserData);
+                parsed.xp = data.newTotalXp;
+                parsed.level = data.level;
+                await AsyncStorage.setItem("userData", JSON.stringify(parsed));
+            }
+        } else {
+            Alert.alert("Error", data.message || "Could not claim reward");
+        }
+    } catch (err) {
+        Alert.alert("Error", "Network error while claiming");
+    }
+  };
+
+  const currentXP = userStats.xp;
+  const level = userStats.level;
   const xpInLevel = currentXP % 100;
   const progressToNextLevel = xpInLevel / 100;
 
   const getRank = (lvl: number, total: number) => {
-    if (total >= 5000) return { name: "Legendary", color: "#FFD700" }; // Gold
-    if (lvl >= 5) return { name: "Grandmaster", color: "#FF3B72" }; // Hot Pink
-    if (lvl >= 4) return { name: "Master", color: "#00E884" }; // Neon Green
-    if (lvl >= 3) return { name: "Pro", color: "#3B82F6" }; // Blue
-    return { name: "Rookie", color: "#A7AEC4" }; // Muted
+    if (total >= 5000) return { name: "Legendary", color: "#FFD700" };
+    if (lvl >= 5) return { name: "Grandmaster", color: "#FF3B72" };
+    if (lvl >= 4) return { name: "Master", color: "#00E884" };
+    if (lvl >= 3) return { name: "Pro", color: "#3B82F6" };
+    return { name: "Rookie", color: "#A7AEC4" };
   };
 
   const rank = getRank(level, currentXP);
@@ -149,28 +209,31 @@ export default function DashboardPage() {
             </View>
         </View>
 
-        {/* Daily Quests */}
+        {/* Daily Missions */}
         <View className="mt-8">
-            <Text className="text-lg font-bold text-gp-white mb-4">Daily Quests</Text>
+            <Text className="text-lg font-bold text-gp-white mb-4">Daily Missions</Text>
             <View className="bg-gp-surface rounded-2xl border border-gp-border overflow-hidden">
-                <View className="p-4 border-b border-gp-border flex-row items-center">
-                    <View className={`h-6 w-6 rounded-full border-2 items-center justify-center ${streak?.days[0]?.contributionCount > 0 ? 'bg-gp-neon border-gp-neon' : 'border-gp-muted'}`}>
-                        {streak?.days[0]?.contributionCount > 0 && <Feather name="check" size={14} color="#050606" />}
+                {missions.map((mission, idx) => (
+                    <View key={mission.id} className={`p-4 flex-row items-center ${idx < missions.length - 1 ? 'border-b border-gp-border' : ''}`}>
+                        <View className={`h-6 w-6 rounded-full border-2 items-center justify-center ${mission.completed ? 'bg-gp-neon border-gp-neon' : 'border-gp-muted'}`}>
+                            {mission.completed && <Feather name="check" size={14} color="#050606" />}
+                        </View>
+                        <View className="ml-3 flex-1">
+                            <Text className={`font-bold ${mission.completed ? 'text-gp-muted line-through' : 'text-gp-white'}`}>{mission.title}</Text>
+                            <Text className="text-xs text-gp-muted">{mission.description}</Text>
+                        </View>
+                        {mission.id === "daily_checkin" && !mission.completed ? (
+                            <TouchableOpacity
+                                onPress={() => handleClaim(mission.id)}
+                                className="bg-gp-neon px-3 py-1 rounded-full"
+                            >
+                                <Text className="text-[10px] font-black text-gp-canvas">CLAIM</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <Text className="text-gp-neon font-bold">+{mission.xpReward} XP</Text>
+                        )}
                     </View>
-                    <View className="ml-3 flex-1">
-                        <Text className={`font-bold ${streak?.days[0]?.contributionCount > 0 ? 'text-gp-muted line-through' : 'text-gp-white'}`}>Keep the flame alive</Text>
-                        <Text className="text-xs text-gp-muted">Make at least one contribution today</Text>
-                    </View>
-                    <Text className="text-gp-neon font-bold">+50 XP</Text>
-                </View>
-                <View className="p-4 flex-row items-center opacity-50">
-                    <View className="h-6 w-6 rounded-full border-2 border-gp-muted items-center justify-center" />
-                    <View className="ml-3 flex-1">
-                        <Text className="font-bold text-gp-white">Sprint Master</Text>
-                        <Text className="text-xs text-gp-muted">Commit to 3 different repositories</Text>
-                    </View>
-                    <Text className="text-gp-muted font-bold">+150 XP</Text>
-                </View>
+                ))}
             </View>
         </View>
 
@@ -209,7 +272,7 @@ export default function DashboardPage() {
             </View>
         </View>
 
-        {/* Contribution Grid (Simplified) */}
+        {/* Contribution Grid */}
         <View className="mt-8">
             <Text className="text-lg font-bold text-gp-white mb-4">Last 30 Days</Text>
             <View className="flex-row flex-wrap justify-between bg-gp-surface p-4 rounded-2xl border border-gp-border">
@@ -224,22 +287,6 @@ export default function DashboardPage() {
                         style={{ width: '12%', aspectRatio: 1 }}
                     />
                 ))}
-            </View>
-        </View>
-
-        {/* GitHub Quick Stats */}
-        <View className="mt-8 flex-row justify-between">
-            <View className="w-[48%] bg-gp-surface p-5 rounded-2xl border border-gp-border">
-                <Feather name="box" size={20} color="#00E884" />
-                <Text className="mt-2 text-2xl font-bold text-gp-white">{githubUser?.publicRepos || 0}</Text>
-                <Text className="text-xs text-gp-muted font-medium">Public Repos</Text>
-            </View>
-             <View className="w-[48%] bg-gp-surface p-5 rounded-2xl border border-gp-border">
-                <Feather name="cpu" size={20} color="#FF3B72" />
-                <Text className="mt-2 text-2xl font-bold text-gp-white">
-                    {streak?.days[0]?.contributionCount || 0}
-                </Text>
-                <Text className="text-xs text-gp-muted font-medium">Today's Commits</Text>
             </View>
         </View>
 

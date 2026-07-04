@@ -85,41 +85,39 @@ async function getGithubStreak(req, res, next) {
       }
     `;
 
-    try {
-      const response = await axios.post(
-        "https://api.github.com/graphql",
-        {
-          query,
-          variables: { username },
+    const response = await axios.post(
+      "https://api.github.com/graphql",
+      {
+        query,
+        variables: { username },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          "Content-Type": "application/json",
         },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
+      },
+    );
 
-      if (response.data.errors) {
-        console.error("GitHub GraphQL Errors:", JSON.stringify(response.data.errors));
-        return res.status(400).json({
-          message: "GitHub GraphQL error",
-          errors: response.data.errors,
-        });
-      }
+    if (response.data.errors) {
+      console.error("GitHub GraphQL Errors:", JSON.stringify(response.data.errors));
+      return res.status(400).json({
+        message: "GitHub GraphQL error",
+        errors: response.data.errors,
+      });
+    }
 
-      if (!response.data.data?.user) {
-         console.error(`User not found in GitHub GraphQL: ${username}`);
-         return res.status(404).json({ message: "GitHub user not found" });
-      }
+    if (!response.data.data?.user) {
+      console.error(`User not found in GitHub GraphQL: ${username}`);
+      return res.status(404).json({ message: "GitHub user not found" });
+    }
 
-      const calendar =
-        response.data.data.user.contributionsCollection.contributionCalendar;
-      const days = calendar.weeks
-        .flatMap((week) => week.contributionDays)
-        .reverse();
+    const calendar = response.data.data.user.contributionsCollection.contributionCalendar;
+    const days = calendar.weeks
+      .flatMap((week) => week.contributionDays)
+      .reverse();
 
-      console.log(`Successfully fetched ${days.length} days of activity`);
+    console.log(`Successfully fetched ${days.length} days of activity`);
 
     let currentStreak = 0;
     let longestStreak = 0;
@@ -137,7 +135,6 @@ async function getGithubStreak(req, res, next) {
         tempStreak++;
       } else {
         // If we hit a zero-contribution day and it's not today, the "current" streak is over
-        // If it IS today, we don't break the current streak yet (maybe they haven't committed yet)
         if (day.date !== today) {
           streakActive = false;
         }
