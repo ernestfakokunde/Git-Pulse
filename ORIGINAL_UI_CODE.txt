@@ -1,0 +1,435 @@
+Original GitPulse UI code reference
+
+This file keeps the generated UI code out of the active Expo Router pages.
+The active root page is intentionally blank in app/index.tsx.
+
+============================================================
+app/index.tsx - Home page
+============================================================
+
+import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useState } from "react";
+import {
+  Pressable,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+export default function HomePage() {
+  const [username, setUsername] = useState("");
+
+  const handleSync = () => {
+    router.push({
+      pathname: "/dashboard",
+      params: { username: username || "ernestfakokunde" },
+    });
+  };
+
+  return (
+    <View className="flex-1 bg-gp-canvas px-7 pt-16">
+      <View className="items-center">
+        <View className="flex-row items-center">
+          <Feather name="chevron-right" size={58} color="#00E884" />
+          <Feather name="activity" size={42} color="#00E884" />
+          <Text className="ml-2 text-5xl font-black text-gp-white">
+            Git<Text className="text-gp-neon">Pulse</Text>
+          </Text>
+        </View>
+
+        <Text className="mt-20 text-center text-3xl font-extrabold leading-10 text-gp-white">
+          Your code streak is your legacy.{"\n"}Protect it.
+        </Text>
+      </View>
+
+      <View className="mt-28 flex-row items-center justify-center opacity-80">
+        <View
+          className="h-20 w-20 rounded-full bg-gp-neon"
+          style={{
+            shadowColor: "#00E884",
+            shadowOpacity: 0.75,
+            shadowRadius: 22,
+            elevation: 18,
+          }}
+        />
+        <View className="ml-6 h-12 w-48 rounded-full bg-gp-card opacity-60" />
+      </View>
+
+      <TextInput
+        value={username}
+        onChangeText={setUsername}
+        placeholder="Enter your public GitHub username..."
+        placeholderTextColor="#9CA3AF"
+        autoCapitalize="none"
+        autoCorrect={false}
+        className="mt-24 h-20 rounded-3xl border border-gp-border px-9 text-xl text-gp-white"
+      />
+
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={handleSync}
+        className="mt-9 h-20 items-center justify-center rounded-3xl bg-gp-neonDim"
+      >
+        <Text className="text-2xl font-black text-black">
+          Sync Profile & Initialize ->
+        </Text>
+      </TouchableOpacity>
+
+      <HelpButton />
+    </View>
+  );
+}
+
+function HelpButton() {
+  return (
+    <Pressable className="absolute bottom-5 right-3 h-12 w-12 items-center justify-center rounded-full border border-gp-border bg-neutral-800">
+      <Text className="text-3xl text-gp-white">?</Text>
+    </Pressable>
+  );
+}
+
+============================================================
+app/dashboard.tsx - Dashboard page
+============================================================
+
+import { Feather } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+const pulseDays = [0, 2, 4, 3, 2, 4, 3, 3, 4, 2, 3, 4, 3, 0];
+
+const recentPulses = [
+  {
+    icon: "git-commit" as const,
+    repo: "gitpulse/core-engine",
+    message: "refactor: optimized rust ingestion runtime",
+    time: "2 hours ago",
+  },
+  {
+    icon: "git-branch" as const,
+    repo: "gitpulse/web-dashboard",
+    message: "feat: implement real-time streak notifications",
+    time: "5 hours ago",
+  },
+  {
+    icon: "git-pull-request" as const,
+    repo: "gitpulse/mobile-app",
+    message: "docs: update contribution guidelines",
+    time: "1 day ago",
+  },
+];
+
+export default function DashboardPage() {
+  const { username } = useLocalSearchParams<{ username?: string }>();
+
+  return (
+    <View className="flex-1 bg-gp-canvas">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="pb-12"
+        showsVerticalScrollIndicator
+      >
+        <View className="flex-row items-center border-b border-neutral-900 px-8 py-6">
+          <View className="h-12 w-12 items-center justify-center rounded-full bg-gp-neon">
+            <Feather name="user" size={24} color="#050606" />
+          </View>
+          <Text className="ml-4 flex-1 font-mono text-lg text-gp-muted">
+            @{username || "ernestfakokunde"}
+          </Text>
+          <Feather name="clock" size={18} color="#A7AEC4" />
+          <Text className="ml-2 font-mono text-lg text-gp-white">09:56:45</Text>
+          <TouchableOpacity onPress={() => router.push("/settings")} className="ml-5">
+            <Feather name="settings" size={30} color="#A7AEC4" />
+          </TouchableOpacity>
+        </View>
+
+        <View className="px-8 pt-9">
+          <View className="rounded-3xl border border-gp-danger bg-gp-surface p-9">
+            <View className="items-end">
+              <View className="flex-row items-center rounded-full border border-gp-danger px-5 py-2">
+                <Feather name="alert-triangle" size={18} color="#FF3D00" />
+                <Text className="ml-3 font-mono text-base font-bold text-gp-danger">
+                  RISK LEVEL: CRITICAL
+                </Text>
+              </View>
+            </View>
+
+            <View className="mt-10 flex-row items-center">
+              <Feather name="droplet" size={72} color="#00E884" />
+              <Text className="ml-8 font-serif text-6xl font-black tracking-widest text-gp-white">
+                14 DAYS
+              </Text>
+            </View>
+
+            <Text className="mt-12 text-2xl leading-8 text-gp-danger">
+              Commit before midnight to reach 15 days or your streak burns.
+            </Text>
+          </View>
+
+          <View className="mt-9 flex-row items-center rounded-3xl border border-gp-danger bg-gp-dangerBg p-7">
+            <Feather name="alert-triangle" size={44} color="#FF3D00" />
+            <View className="ml-5 flex-1">
+              <View className="flex-row items-center">
+                <Feather name="x" size={36} color="#FF3B72" />
+                <Text className="ml-3 text-2xl font-black text-gp-danger">
+                  INCOMPLETE
+                </Text>
+              </View>
+              <Text className="mt-2 text-lg leading-6 text-gp-muted">
+                No commits detected today. Your streak is at risk!
+              </Text>
+            </View>
+          </View>
+
+          <PulseHistory />
+          <RecentPulses />
+        </View>
+      </ScrollView>
+
+      <HelpButton />
+    </View>
+  );
+}
+
+function PulseHistory() {
+  return (
+    <View className="mt-9 rounded-3xl bg-gp-surface p-9">
+      <Text className="text-2xl font-black text-gp-white">
+        Last 14 Days Pulse
+      </Text>
+
+      <View className="mt-8 flex-row items-center gap-3">
+        {pulseDays.map((level, index) => (
+          <View
+            key={`${level}-${index}`}
+            className={[
+              "h-8 flex-1 rounded-lg border",
+              level === 0
+                ? "border-gp-border bg-gp-surface"
+                : level === 2
+                  ? "border-gp-neonDim bg-gp-neonDim"
+                  : level === 3
+                    ? "border-emerald-600 bg-emerald-600"
+                    : "border-gp-neon bg-gp-neon",
+            ].join(" ")}
+          />
+        ))}
+      </View>
+
+      <View className="mt-9 flex-row items-center">
+        <Text className="text-base text-gp-muted">Less</Text>
+        {[0, 2, 3, 4].map((level) => (
+          <View
+            key={level}
+            className={[
+              "ml-5 h-8 w-8 rounded-lg border",
+              level === 0
+                ? "border-gp-border bg-gp-surface"
+                : level === 2
+                  ? "border-gp-neonDim bg-gp-neonDim"
+                  : level === 3
+                    ? "border-emerald-600 bg-emerald-600"
+                    : "border-gp-neon bg-gp-neon",
+            ].join(" ")}
+          />
+        ))}
+        <Text className="ml-5 text-base text-gp-muted">More</Text>
+      </View>
+    </View>
+  );
+}
+
+function RecentPulses() {
+  return (
+    <View className="mt-9 rounded-3xl bg-gp-surface p-9">
+      <Text className="text-2xl font-black text-gp-white">Recent Pulses</Text>
+
+      <View className="mt-7 gap-5">
+        {recentPulses.map((pulse) => (
+          <View
+            key={pulse.repo}
+            className="flex-row rounded-3xl bg-gp-card p-6"
+          >
+            <Feather name={pulse.icon} size={24} color="#00E884" />
+            <View className="ml-5 flex-1">
+              <Text className="font-mono text-xl text-gp-white">
+                {pulse.repo}
+              </Text>
+              <Text className="mt-3 text-lg leading-7 text-gp-muted">
+                {pulse.message}
+              </Text>
+              <Text className="mt-3 font-mono text-base text-gp-muted">
+                {pulse.time}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function HelpButton() {
+  return (
+    <Pressable className="absolute bottom-5 right-3 h-12 w-12 items-center justify-center rounded-full border border-gp-border bg-neutral-800">
+      <Text className="text-3xl text-gp-white">?</Text>
+    </Pressable>
+  );
+}
+
+============================================================
+app/settings.tsx - Settings page
+============================================================
+
+import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+const metadata = [
+  {
+    icon: "activity" as const,
+    title: "System Telemetry",
+    detail: "Cached via Redis Node",
+  },
+  {
+    icon: "check-circle" as const,
+    title: "GitHub Status",
+    detail: "Connected",
+  },
+];
+
+export default function SettingsPage() {
+  return (
+    <View className="flex-1 bg-gp-canvas">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="pb-12"
+        showsVerticalScrollIndicator
+      >
+        <View className="flex-row items-center border-b border-neutral-900 px-8 py-7">
+          <TouchableOpacity onPress={() => router.back()} className="mr-7">
+            <Feather name="arrow-left" size={30} color="#A7AEC4" />
+          </TouchableOpacity>
+          <Text className="text-3xl font-black text-gp-white">
+            Streak Protection & Settings
+          </Text>
+        </View>
+
+        <View className="px-8 pt-9">
+          <View className="rounded-3xl border border-gp-neon bg-gp-surface p-9">
+            <View className="flex-row items-start">
+              <View className="h-20 w-20 items-center justify-center rounded-3xl bg-gp-card">
+                <Feather name="shield" size={38} color="#00E884" />
+              </View>
+              <View className="ml-5 flex-1">
+                <Text className="text-2xl font-black text-gp-white">
+                  Streak Guardian
+                </Text>
+                <Text className="mt-3 text-lg text-gp-muted">
+                  Active Protection
+                </Text>
+              </View>
+              <View className="h-10 w-20 flex-row items-center justify-end rounded-full bg-gp-neon px-1">
+                <View className="h-8 w-8 rounded-full bg-gp-white" />
+              </View>
+            </View>
+
+            <Text className="mt-8 text-xl leading-8 text-gp-muted">
+              Trigger native device overrides and absolute urgency notifications if
+              your streak status is empty past 21:00.
+            </Text>
+
+            <View className="mt-7 rounded-3xl bg-gp-card p-6">
+              <View className="flex-row items-center">
+                <Feather name="bell" size={24} color="#00E884" />
+                <Text className="ml-5 text-xl font-black text-gp-white">
+                  Alert Time
+                </Text>
+              </View>
+              <View className="mt-5 h-16 flex-row items-center justify-between rounded-2xl border border-gp-neon bg-gp-canvas px-7">
+                <Text className="font-mono text-2xl text-gp-neon">09:00 PM</Text>
+                <Feather name="clock" size={25} color="#F8FAFC" />
+              </View>
+            </View>
+          </View>
+
+          <View className="mt-9 rounded-3xl bg-gp-surface p-9">
+            <View className="flex-row items-center">
+              <Feather name="database" size={35} color="#00E884" />
+              <Text className="ml-5 text-3xl font-black text-gp-white">
+                Developer Metadata
+              </Text>
+            </View>
+
+            <View className="mt-7 gap-5">
+              {metadata.map((item) => (
+                <View
+                  key={item.title}
+                  className="flex-row items-center rounded-2xl bg-gp-card p-5"
+                >
+                  <Feather name={item.icon} size={25} color="#00E884" />
+                  <View className="ml-5 flex-1">
+                    <Text className="font-mono text-xl text-gp-white">
+                      {item.title}
+                    </Text>
+                    <Text className="mt-2 text-base text-gp-muted">
+                      {item.detail}
+                    </Text>
+                  </View>
+                  <View className="h-3 w-3 rounded-full bg-gp-neon" />
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View className="mt-9 rounded-3xl bg-gp-surface p-9">
+            <Text className="text-3xl font-black text-gp-white">
+              App Information
+            </Text>
+
+            <InfoRow label="Version" value="v1.0.0" />
+            <InfoRow label="Build" value="2026.06.26" />
+            <InfoRow label="API Version" value="GitHub v4 (GraphQL)" />
+          </View>
+
+          <TouchableOpacity className="mt-9 h-20 items-center justify-center rounded-3xl border border-gp-danger bg-gp-dangerBg">
+            <Text className="text-2xl font-black text-gp-danger">Sign Out</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      <HelpButton />
+    </View>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="mt-7 flex-row items-center justify-between">
+      <Text className="font-mono text-lg text-gp-muted">{label}</Text>
+      <Text className="font-mono text-lg text-gp-neon">{value}</Text>
+    </View>
+  );
+}
+
+function HelpButton() {
+  return (
+    <Pressable className="absolute bottom-5 right-3 h-12 w-12 items-center justify-center rounded-full border border-gp-border bg-neutral-800">
+      <Text className="text-3xl text-gp-white">?</Text>
+    </Pressable>
+  );
+}
