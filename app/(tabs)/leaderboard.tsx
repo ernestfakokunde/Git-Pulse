@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -26,14 +27,22 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [users, setUsers] = useState<LeaderboardUser[]>([]);
+  const [userRank, setUserRank] = useState<number | null>(null);
 
   const fetchLeaderboard = async () => {
     try {
-      const response = await fetch(`${apiUrl}/api/users/leaderboard`);
+      const token = await AsyncStorage.getItem("userToken");
+      const response = await fetch(`${apiUrl}/api/users/leaderboard`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+      });
       const data = await response.json();
       if (response.ok) {
-        setUsers(data);
+        setUsers(data.leaderboard);
+        setUserRank(data.userRank);
       }
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -41,6 +50,7 @@ export default function LeaderboardPage() {
       setRefreshing(false);
     }
   };
+
 
   useEffect(() => {
     fetchLeaderboard();
@@ -91,6 +101,17 @@ export default function LeaderboardPage() {
           </View>
           <Text className="text-3xl font-black text-gp-white">Global Pulse</Text>
       </View>
+
+      {userRank && (
+        <View className="mb-6 rounded-2xl border border-gp-neon/20 bg-gp-card p-4">
+            <View className="flex-row items-center justify-center">
+                <Feather name="award" size={20} color="#00E884" />
+                <Text className="ml-2 text-center text-gp-white font-medium">
+                    You are ranked <Text className="font-black text-gp-neon">#{userRank}</Text> in GitPulse
+                </Text>
+            </View>
+        </View>
+      )}
 
       <FlatList
         data={users}

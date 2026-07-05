@@ -7,32 +7,45 @@ const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function StreakDetail() {
   const [streak, setStreak] = useState<any>(null);
+  const [userStats, setUserStats] = useState({ xp: 0, level: 1 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStreak = async () => {
-      const storedGithub = await AsyncStorage.getItem("githubData");
-      if (storedGithub) {
-        const { username } = JSON.parse(storedGithub);
-        const res = await fetch(`${apiUrl}/api/github/streak/${username}`);
-        const data = await res.json();
-        setStreak(data);
+    const fetchData = async () => {
+      try {
+        const token = await AsyncStorage.getItem("userToken");
+        const storedGithub = await AsyncStorage.getItem("githubData");
+        const storedUserData = await AsyncStorage.getItem("userData");
+
+        if (storedGithub) {
+          const { username } = JSON.parse(storedGithub);
+          const res = await fetch(`${apiUrl}/api/github/streak/${username}`);
+          const data = await res.json();
+          setStreak(data);
+        }
+
+        if (storedUserData) {
+          const parsedUser = JSON.parse(storedUserData);
+          setUserStats({ xp: parsedUser.xp || 0, level: parsedUser.level || 1 });
+        }
+      } catch (err) {
+        console.error("Error fetching streak data:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    fetchStreak();
+    fetchData();
   }, []);
 
-  const currentXP = streak?.totalContributions || 0;
-  const level = Math.floor(currentXP / 100) + 1;
   const getRank = (lvl: number, total: number) => {
-    if (total >= 5000) return { name: "Legendary", color: "#FFD700" };
-    if (lvl >= 5) return { name: "Grandmaster", color: "#FF3B72" };
-    if (lvl >= 4) return { name: "Master", color: "#00E884" };
-    if (lvl >= 3) return { name: "Pro", color: "#3B82F6" };
+    if (total >= 10000) return { name: "Legendary", color: "#FFD700" };
+    if (lvl >= 51) return { name: "Grandmaster", color: "#FF3B72" };
+    if (lvl >= 26) return { name: "Master", color: "#00E884" };
+    if (lvl >= 11) return { name: "Pro", color: "#3B82F6" };
     return { name: "Rookie", color: "#A7AEC4" };
   };
-  const rank = getRank(level, currentXP);
+
+  const rank = getRank(userStats.level, userStats.xp);
 
   if (loading) return <View className="flex-1 bg-gp-canvas items-center justify-center"><ActivityIndicator color="#00E884" /></View>;
 

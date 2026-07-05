@@ -7,7 +7,7 @@
         import { ActivityIndicator, Pressable, Text, View } from "react-native";
         import AsyncStorage from "@react-native-async-storage/async-storage";
 
-        import Pulse from "../assets/pulse.png";
+        import Logo from "../assets/images/Yellow Black Modern Art & Design Logo.png";
 
         WebBrowser.maybeCompleteAuthSession();
 
@@ -117,8 +117,8 @@
               <View className="flex-1 items-center">
                 <View className="mt-10 flex-row items-center justify-center">
                   <Image
-                    source={Pulse}
-                    className="mr-3 h-10 w-10"
+                    source={Logo}
+                    className="mr-3 h-16 w-16"
                     contentFit="contain"
                   />
 
