@@ -79,6 +79,8 @@ export default function DashboardPage() {
       if (streakRes.ok) setStreak(streakData);
       if (missionsRes.ok) setMissions(missionsData);
 
+
+
     } catch (err) {
       console.error("Fetch Error Details:", err);
       setError("Unable to connect to the server at " + apiUrl);
@@ -117,7 +119,9 @@ export default function DashboardPage() {
             Alert.alert("Success!", `You gained ${data.xpGained} XP!`);
             // Update local state
             setUserStats({ xp: data.newTotalXp, level: data.level });
-            setMissions(prev => prev.map(m => m.id === "daily_checkin" ? { ...m, completed: true } : m));
+
+            // Re-fetch missions to show the next one in the queue
+            fetchData();
 
             // Update stored userData
             const storedUserData = await AsyncStorage.getItem("userData");
@@ -141,14 +145,25 @@ export default function DashboardPage() {
   const progressToNextLevel = xpInLevel / 100;
 
   const getRank = (lvl: number, total: number) => {
-    if (total >= 5000) return { name: "Legendary", color: "#FFD700" };
-    if (lvl >= 5) return { name: "Grandmaster", color: "#FF3B72" };
-    if (lvl >= 4) return { name: "Master", color: "#00E884" };
-    if (lvl >= 3) return { name: "Pro", color: "#3B82F6" };
+    if (total >= 10000) return { name: "Legendary", color: "#FFD700" };
+    if (lvl >= 51) return { name: "Grandmaster", color: "#FF3B72" };
+    if (lvl >= 26) return { name: "Master", color: "#00E884" };
+    if (lvl >= 11) return { name: "Pro", color: "#3B82F6" };
     return { name: "Rookie", color: "#A7AEC4" };
   };
 
   const rank = getRank(level, currentXP);
+
+  const getNextRankInfo = (totalXP: number) => {
+    if (totalXP < 1000) return { name: "Pro", target: 1100 };
+    if (totalXP < 2500) return { name: "Master", target: 2600 };
+    if (totalXP < 5000) return { name: "Grandmaster", target: 5100 };
+    if (totalXP < 10000) return { name: "Legendary", target: 10000 };
+    return null;
+  };
+
+  const nextRank = getNextRankInfo(currentXP);
+  const xpRemaining = nextRank ? nextRank.target - currentXP : 0;
 
   if (loading) {
     return (
@@ -212,6 +227,41 @@ export default function DashboardPage() {
             </View>
         </View>
 
+        {/* Total Power & Milestone Guide */}
+        <View className="mt-8 bg-gp-surface p-5 rounded-2xl border border-gp-border">
+            <View className="flex-row justify-between items-end mb-4">
+                <View>
+                    <Text className="text-gp-muted text-xs uppercase font-bold mb-1">Total Power</Text>
+                    <Text className="text-gp-white text-3xl font-black">{currentXP} XP</Text>
+                </View>
+                {nextRank && (
+                    <View className="items-end">
+                        <Text className="text-gp-neon font-black text-lg">{xpRemaining}</Text>
+                        <Text className="text-gp-muted text-[10px] uppercase font-bold">XP to {nextRank.name}</Text>
+                    </View>
+                )}
+            </View>
+
+            <View className="flex-row justify-between pt-4 border-t border-gp-border">
+                <View className="items-center">
+                    <Text className="text-gp-white font-bold text-[10px]">ROOKIE</Text>
+                    <Text className="text-gp-muted text-[9px]">0 - 1k</Text>
+                </View>
+                <View className="items-center opacity-60">
+                    <Text className="text-gp-white font-bold text-[10px]">PRO</Text>
+                    <Text className="text-gp-muted text-[9px]">1.1k - 2.5k</Text>
+                </View>
+                <View className="items-center opacity-60">
+                    <Text className="text-gp-white font-bold text-[10px]">MASTER</Text>
+                    <Text className="text-gp-muted text-[9px]">2.6k - 5k</Text>
+                </View>
+                <View className="items-center opacity-60">
+                    <Text className="text-gp-white font-bold text-[10px]">LEGEND</Text>
+                    <Text className="text-gp-muted text-[9px]">10k+</Text>
+                </View>
+            </View>
+        </View>
+
         {/* Daily Missions */}
         <View className="mt-8">
             <Text className="text-lg font-bold text-gp-white mb-4">Daily Missions</Text>
@@ -225,12 +275,14 @@ export default function DashboardPage() {
                             <Text className={`font-bold ${mission.completed ? 'text-gp-muted line-through' : 'text-gp-white'}`}>{mission.title}</Text>
                             <Text className="text-xs text-gp-muted">{mission.description}</Text>
                         </View>
-                        {mission.id === "daily_checkin" && !mission.completed ? (
+                        {!mission.completed ? (
                             <TouchableOpacity
                                 onPress={() => handleClaim(mission.id)}
-                                className="bg-gp-neon px-3 py-1 rounded-full"
+                                className={`px-3 py-1 rounded-full ${mission.id !== 'daily_pulse' && mission.requiresCommit ? 'bg-gp-cardSoft border border-gp-neon/30' : 'bg-gp-neon'}`}
                             >
-                                <Text className="text-[10px] font-black text-gp-canvas">CLAIM</Text>
+                                <Text className={`text-[10px] font-black ${mission.id !== 'daily_pulse' && mission.requiresCommit ? 'text-gp-neon' : 'text-gp-canvas'}`}>
+                                    {mission.id !== 'daily_pulse' && mission.requiresCommit ? 'VERIFY' : 'CLAIM'}
+                                </Text>
                             </TouchableOpacity>
                         ) : (
                             <Text className="text-gp-neon font-bold">+{mission.xpReward} XP</Text>

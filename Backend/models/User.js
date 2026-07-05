@@ -55,6 +55,10 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    completedMissions: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,
