@@ -36,6 +36,7 @@ interface Mission {
   xpReward: number;
   completed: boolean;
   type: string;
+  requiresCommit?: boolean;
 }
 
 export default function DashboardPage() {
@@ -78,8 +79,6 @@ export default function DashboardPage() {
 
       if (streakRes.ok) setStreak(streakData);
       if (missionsRes.ok) setMissions(missionsData);
-
-
 
     } catch (err) {
       console.error("Fetch Error Details:", err);
@@ -183,7 +182,7 @@ export default function DashboardPage() {
     >
       <View className="px-6 pt-14">
         {/* Header */}
-        <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center justify-between mb-8">
           <View className="flex-row items-center">
             <Image
               source={githubUser?.avatarUrl}
@@ -213,87 +212,8 @@ export default function DashboardPage() {
           </View>
         </View>
 
-        {/* XP Progress Bar */}
-        <View className="mt-6">
-            <View className="flex-row justify-between mb-2">
-                <Text className="text-xs font-bold text-gp-white uppercase">Progress to LVL {level + 1}</Text>
-                <Text className="text-xs font-bold text-gp-muted">{xpInLevel}/100 XP</Text>
-            </View>
-            <View className="h-2 w-full bg-gp-surface rounded-full overflow-hidden border border-gp-border">
-                <View
-                    className="h-full bg-gp-neon"
-                    style={{ width: `${progressToNextLevel * 100}%` }}
-                />
-            </View>
-        </View>
-
-        {/* Total Power & Milestone Guide */}
-        <View className="mt-8 bg-gp-surface p-5 rounded-2xl border border-gp-border">
-            <View className="flex-row justify-between items-end mb-4">
-                <View>
-                    <Text className="text-gp-muted text-xs uppercase font-bold mb-1">Total Power</Text>
-                    <Text className="text-gp-white text-3xl font-black">{currentXP} XP</Text>
-                </View>
-                {nextRank && (
-                    <View className="items-end">
-                        <Text className="text-gp-neon font-black text-lg">{xpRemaining}</Text>
-                        <Text className="text-gp-muted text-[10px] uppercase font-bold">XP to {nextRank.name}</Text>
-                    </View>
-                )}
-            </View>
-
-            <View className="flex-row justify-between pt-4 border-t border-gp-border">
-                <View className="items-center">
-                    <Text className="text-gp-white font-bold text-[10px]">ROOKIE</Text>
-                    <Text className="text-gp-muted text-[9px]">0 - 1k</Text>
-                </View>
-                <View className="items-center opacity-60">
-                    <Text className="text-gp-white font-bold text-[10px]">PRO</Text>
-                    <Text className="text-gp-muted text-[9px]">1.1k - 2.5k</Text>
-                </View>
-                <View className="items-center opacity-60">
-                    <Text className="text-gp-white font-bold text-[10px]">MASTER</Text>
-                    <Text className="text-gp-muted text-[9px]">2.6k - 5k</Text>
-                </View>
-                <View className="items-center opacity-60">
-                    <Text className="text-gp-white font-bold text-[10px]">LEGEND</Text>
-                    <Text className="text-gp-muted text-[9px]">10k+</Text>
-                </View>
-            </View>
-        </View>
-
-        {/* Daily Missions */}
-        <View className="mt-8">
-            <Text className="text-lg font-bold text-gp-white mb-4">Daily Missions</Text>
-            <View className="bg-gp-surface rounded-2xl border border-gp-border overflow-hidden">
-                {missions.map((mission, idx) => (
-                    <View key={mission.id} className={`p-4 flex-row items-center ${idx < missions.length - 1 ? 'border-b border-gp-border' : ''}`}>
-                        <View className={`h-6 w-6 rounded-full border-2 items-center justify-center ${mission.completed ? 'bg-gp-neon border-gp-neon' : 'border-gp-muted'}`}>
-                            {mission.completed && <Feather name="check" size={14} color="#050606" />}
-                        </View>
-                        <View className="ml-3 flex-1">
-                            <Text className={`font-bold ${mission.completed ? 'text-gp-muted line-through' : 'text-gp-white'}`}>{mission.title}</Text>
-                            <Text className="text-xs text-gp-muted">{mission.description}</Text>
-                        </View>
-                        {!mission.completed ? (
-                            <TouchableOpacity
-                                onPress={() => handleClaim(mission.id)}
-                                className={`px-3 py-1 rounded-full ${mission.id !== 'daily_pulse' && mission.requiresCommit ? 'bg-gp-cardSoft border border-gp-neon/30' : 'bg-gp-neon'}`}
-                            >
-                                <Text className={`text-[10px] font-black ${mission.id !== 'daily_pulse' && mission.requiresCommit ? 'text-gp-neon' : 'text-gp-canvas'}`}>
-                                    {mission.id !== 'daily_pulse' && mission.requiresCommit ? 'VERIFY' : 'CLAIM'}
-                                </Text>
-                            </TouchableOpacity>
-                        ) : (
-                            <Text className="text-gp-neon font-bold">+{mission.xpReward} XP</Text>
-                        )}
-                    </View>
-                ))}
-            </View>
-        </View>
-
-        {/* Hero Streak Card */}
-        <View className="mt-8 overflow-hidden rounded-3xl bg-gp-card p-6 border border-gp-neon/20">
+        {/* 1. Hero Streak Card (Top Priority) */}
+        <View className="overflow-hidden rounded-3xl bg-gp-card p-6 border border-gp-neon/20">
             <View className="flex-row items-center justify-between">
                 <View>
                     <View className="flex-row items-center mb-1">
@@ -327,7 +247,85 @@ export default function DashboardPage() {
             </View>
         </View>
 
-        {/* Contribution Grid */}
+        {/* 2. XP Progress & Milestone Guide */}
+        <View className="mt-8">
+            <View className="flex-row justify-between mb-2">
+                <Text className="text-xs font-bold text-gp-white uppercase">Progress to LVL {level + 1}</Text>
+                <Text className="text-xs font-bold text-gp-muted">{xpInLevel}/100 XP</Text>
+            </View>
+            <View className="h-2 w-full bg-gp-surface rounded-full overflow-hidden border border-gp-border">
+                <View
+                    className="h-full bg-gp-neon"
+                    style={{ width: `${progressToNextLevel * 100}%` }}
+                />
+            </View>
+        </View>
+
+        <View className="mt-4 bg-gp-surface p-5 rounded-2xl border border-gp-border">
+            <View className="flex-row justify-between items-end mb-4">
+                <View>
+                    <Text className="text-gp-muted text-xs uppercase font-bold mb-1">Total Power</Text>
+                    <Text className="text-gp-white text-3xl font-black">{currentXP} XP</Text>
+                </View>
+                {nextRank && (
+                    <View className="items-end">
+                        <Text className="text-gp-neon font-black text-lg">{xpRemaining}</Text>
+                        <Text className="text-gp-muted text-[10px] uppercase font-bold">XP to {nextRank.name}</Text>
+                    </View>
+                )}
+            </View>
+
+            <View className="flex-row justify-between pt-4 border-t border-gp-border">
+                <View className="items-center">
+                    <Text className="text-gp-white font-bold text-[10px]">ROOKIE</Text>
+                    <Text className="text-gp-muted text-[9px]">0 - 1k</Text>
+                </View>
+                <View className="items-center opacity-60">
+                    <Text className="text-gp-white font-bold text-[10px]">PRO</Text>
+                    <Text className="text-gp-muted text-[9px]">1.1k - 2.5k</Text>
+                </View>
+                <View className="items-center opacity-60">
+                    <Text className="text-gp-white font-bold text-[10px]">MASTER</Text>
+                    <Text className="text-gp-muted text-[9px]">2.6k - 5k</Text>
+                </View>
+                <View className="items-center opacity-60">
+                    <Text className="text-gp-white font-bold text-[10px]">LEGEND</Text>
+                    <Text className="text-gp-muted text-[9px]">10k+</Text>
+                </View>
+            </View>
+        </View>
+
+        {/* 3. Daily Missions */}
+        <View className="mt-8">
+            <Text className="text-lg font-bold text-gp-white mb-4">Daily Missions</Text>
+            <View className="bg-gp-surface rounded-2xl border border-gp-border overflow-hidden">
+                {missions.map((mission, idx) => (
+                    <View key={mission.id} className={`p-4 flex-row items-center ${idx < missions.length - 1 ? 'border-b border-gp-border' : ''}`}>
+                        <View className={`h-6 w-6 rounded-full border-2 items-center justify-center ${mission.completed ? 'bg-gp-neon border-gp-neon' : 'border-gp-muted'}`}>
+                            {mission.completed && <Feather name="check" size={14} color="#050606" />}
+                        </View>
+                        <View className="ml-3 flex-1">
+                            <Text className={`font-bold ${mission.completed ? 'text-gp-muted line-through' : 'text-gp-white'}`}>{mission.title}</Text>
+                            <Text className="text-xs text-gp-muted">{mission.description}</Text>
+                        </View>
+                        {!mission.completed ? (
+                            <TouchableOpacity
+                                onPress={() => handleClaim(mission.id)}
+                                className={`px-3 py-1 rounded-full ${mission.id !== 'daily_pulse' && mission.requiresCommit ? 'bg-gp-cardSoft border border-gp-neon/30' : 'bg-gp-neon'}`}
+                            >
+                                <Text className={`text-[10px] font-black ${mission.id !== 'daily_pulse' && mission.requiresCommit ? 'text-gp-neon' : 'text-gp-canvas'}`}>
+                                    {mission.id !== 'daily_pulse' && mission.requiresCommit ? 'VERIFY' : 'CLAIM'}
+                                </Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <Text className="text-gp-neon font-bold">+{mission.xpReward} XP</Text>
+                        )}
+                    </View>
+                ))}
+            </View>
+        </View>
+
+        {/* 4. Contribution Grid */}
         <View className="mt-8">
             <Text className="text-lg font-bold text-gp-white mb-4">Last 30 Days</Text>
             <View className="flex-row flex-wrap justify-between bg-gp-surface p-4 rounded-2xl border border-gp-border">
