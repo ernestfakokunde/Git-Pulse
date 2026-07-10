@@ -6,6 +6,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
+import * as SplashScreen from "expo-splash-screen";
+
+SplashScreen.preventAutoHideAsync();
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -47,6 +50,10 @@ export default function RootLayout() {
       if (token) {
         router.replace("/(tabs)/dashboard");
       }
+      // Give it a tiny bit of time to render the next screen
+      setTimeout(async () => {
+        await SplashScreen.hideAsync();
+      }, 500);
     };
     checkLogin();
 
