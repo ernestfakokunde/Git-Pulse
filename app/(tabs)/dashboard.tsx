@@ -133,7 +133,7 @@ export default function DashboardPage() {
         } else {
             Alert.alert("Error", data.message || "Could not claim reward");
         }
-    } catch (err) {
+    } catch {
         Alert.alert("Error", "Network error while claiming");
     }
   };

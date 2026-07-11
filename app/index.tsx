@@ -53,7 +53,7 @@ export default function IndexPage() {
       -1,
       true
     );
-  }, []);
+  }, [logoScale, redirectUri]);
 
   const animatedLogoStyle = useAnimatedStyle(() => ({
     transform: [{ scale: logoScale.value }],
