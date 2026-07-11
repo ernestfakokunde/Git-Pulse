@@ -40,9 +40,8 @@ async function startServer() {
   await connectDB();
   await connectRedis();
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`GitPulse API listening on port ${PORT}`);
-    console.log(`Mobile/Emulator Access: http://10.210.4.47:${PORT}`);
+  app.listen(PORT, () => {
+    console.log(`GitPulse API is live on port ${PORT}`);
   });
 }
 

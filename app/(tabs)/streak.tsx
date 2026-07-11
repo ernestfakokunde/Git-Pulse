@@ -13,7 +13,6 @@ export default function StreakDetail() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await AsyncStorage.getItem("userToken");
         const storedGithub = await AsyncStorage.getItem("githubData");
         const storedUserData = await AsyncStorage.getItem("userData");
 
